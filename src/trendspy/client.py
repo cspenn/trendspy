@@ -1,5 +1,7 @@
 import re
 import json
+import logging
+import random
 import requests
 import pandas as pd
 import numpy as np
@@ -14,6 +16,8 @@ from .timeframe_utils import convert_timeframe, check_timeframe_resolution
 from .hierarchical_search import create_hierarchical_index
 from .trend_list import TrendList
 from time import sleep,time
+from .rate_limiter import AdaptiveRateLimiter, CircuitBreakerError
+from .session_manager import SessionManager
 
 class TrendsQuotaExceededError(Exception):
     """Raised when the Google Trends API quota is exceeded for related queries/topics."""
@@ -87,17 +91,27 @@ class Trends:
 			- {"http": "http://10.10.1.10:3128", "https": "http://10.10.1.10:1080"}
 	"""
 		
-	def __init__(self, language='en', tzs=360, request_delay=1., max_retries=3, use_enitity_names = False, proxy=None, **kwargs):
+	def __init__(self, language='en', tzs=360, request_delay=1., max_retries=3,
+				 requests_per_hour=200, use_enitity_names = False, proxy=None,
+				 session_file='.trendspy_session.pkl', persist_cookies=True,
+				 use_tor=False, use_tls_impersonation=True, tls_browser='chrome131',
+				 **kwargs):
 		"""
-		Initialize the Trends client.
-		
+		Initialize the Trends client with advanced rate limiting and session management.
+
 		Args:
 			language (str): Language code (e.g., 'en', 'es', 'fr').
 			tzs (int): Timezone offset in minutes. Defaults to 360.
 			request_delay (float): Minimum time interval between requests in seconds. Helps avoid hitting rate limits and behaving like a bot. Set to 0 to disable.
 			max_retries (int): Maximum number of retry attempts for failed requests. Each retry includes exponential backoff delay of 2^(max_retries-retries) seconds for rate limit errors (429, 302).
+			requests_per_hour (int): Maximum requests allowed per hour (default: 200)
 			use_enitity_names (bool): Whether to use entity names instead of keywords.
 			proxy (str or dict): Proxy configuration.
+			session_file (str): Path to session pickle file for cookie persistence (default: .trendspy_session.pkl)
+			persist_cookies (bool): Whether to save/load cookies across runs (default: True)
+			use_tor (bool): Enable Tor proxy for free IP rotation (default: False, requires Tor installed)
+			use_tls_impersonation (bool): Use curl_cffi for TLS fingerprint impersonation (default: True)
+			tls_browser (str): Browser to impersonate (chrome131, chrome130, firefox132, etc.) (default: chrome131)
 			**kwargs: Additional arguments for backwards compatibility.
 				- hl (str, deprecated): Old-style language code (e.g., 'en' or 'en-US').
 				If provided, will be used as fallback when language is invalid.
@@ -108,20 +122,59 @@ class Trends:
 			self.language = kwargs['hl'][:2].lower()
 		else:
 			self.language = 'en'
-	
+
 		# self.hl = hl
 		self.tzs = tzs or -int(datetime.now().astimezone().utcoffset().total_seconds()/60)
 		self._default_params = {'hl': self.language, 'tz': tzs}
 		self.use_enitity_names = use_enitity_names
-		self.session = requests.session()
+
+		# NEW: Session manager with cookie persistence, TLS impersonation, and Phase 3 enhancements
+		self.session_manager = SessionManager(
+			session_file=session_file,
+			persist_cookies=persist_cookies,
+			use_tls_impersonation=use_tls_impersonation,
+			tls_browser=tls_browser,
+			use_browser_profiles=True,  # Phase 3.1: Coherent browser profiles
+			session_warmup=True  # Phase 3.2: Session warmup
+		)
+		self.session = self.session_manager.get_session()
+
 		self._headers = {'accept-language': self.language}
 		self._geo_cache = {}
 		self._category_cache = {}  # Add category cache
+
+		# OLD rate limiting (keep for backward compatibility)
 		self.request_delay = request_delay
 		self.max_retires = max_retries
 		self.last_request_times = {0,1}
-		# Initialize proxy configuration
-		self.set_proxy(proxy)
+
+		# NEW: Advanced rate limiter
+		self.rate_limiter = AdaptiveRateLimiter(
+			requests_per_hour=requests_per_hour,
+			base_delay=request_delay,
+			emergency_threshold=5,
+			emergency_multiplier=3
+		)
+
+		# Optional Tor proxy for free IP rotation
+		if use_tor:
+			from .tor_proxy import create_tor_proxy
+			tor = create_tor_proxy()
+			if tor:
+				self.set_proxy(tor.get_proxy_config())
+				self.tor_rotator = tor
+				logger = logging.getLogger(__name__)
+				logger.info("Tor proxy activated")
+			else:
+				logger = logging.getLogger(__name__)
+				logger.warning("Tor requested but not available")
+				self.tor_rotator = None
+		else:
+			self.tor_rotator = None
+
+		# Initialize proxy configuration (if not already set by Tor)
+		if not use_tor:
+			self.set_proxy(proxy)
 	
 	def set_proxy(self, proxy=None):
 		"""
@@ -212,19 +265,52 @@ class Trends:
 
 	def _get(self, url, params=None, headers=None):
 		"""
-		Make HTTP GET request with retry logic and proxy support.
-		
+		Make HTTP GET request with advanced rate limiting and retry logic.
+
 		Args:
 			url (str): URL to request
 			params (dict, optional): Query parameters
-			
+			headers (dict, optional): Request headers
+
 		Returns:
 			requests.Response: Response object
-			
+
 		Raises:
-			ValueError: If response status code is not 200
+			CircuitBreakerError: If circuit breaker triggered
+			requests.HTTPError: On HTTP errors
 			requests.exceptions.RequestException: For network-related errors
 		"""
+		# NEW: Check circuit breaker before attempting request
+		if self.rate_limiter.should_circuit_break():
+			raise CircuitBreakerError(
+				f"Circuit breaker triggered after "
+				f"{self.rate_limiter.consecutive_failures} consecutive failures. "
+				f"Please wait before retrying."
+			)
+
+		# NEW: Enforce rate limits before request
+		self.rate_limiter.wait_if_needed()
+
+		# Phase 3.3: Header variation (30% of requests)
+		# Vary Accept header to mimic real browser behavior
+		if headers is None:
+			headers = {}
+
+		if random.random() < 0.3:
+			accept_variations = [
+				'application/json, text/javascript, */*; q=0.01',
+				'application/json, */*',
+				'application/json, text/plain, */*',
+			]
+			headers['Accept'] = random.choice(accept_variations)
+
+		# Occasionally add/remove DNT header (10% presence variation)
+		if random.random() < 0.1:
+			if 'DNT' not in headers:
+				headers['DNT'] = '1'
+			else:
+				del headers['DNT']
+
 		retries = self.max_retires
 		response_code = 429
 		response_codes = []
@@ -232,25 +318,29 @@ class Trends:
 		req = None
 		while (retries > 0):
 			try:
-
-				if self.request_delay:
-					min_time = min(self.last_request_times)
-					sleep_time = max(0, self.request_delay - (time() - min_time))
-					sleep(sleep_time)
-					self.last_request_times = (self.last_request_times - {min_time,}) | {time(),}
-
 				req = self.session.get(url, params=params, headers=headers)
 				last_response = req
 				response_code = req.status_code
 				response_codes.append(response_code)
 
 				if response_code == 200:
+					# NEW: Record success
+					self.rate_limiter.record_success()
 					return req
 				else:
 					if response_code in {429,302}:
-						sleep(2**(self.max_retires-retries))
+						# NEW: Record failure for rate limiting
+						self.rate_limiter.record_failure()
+						# Exponential backoff
+						backoff_time = 2**(self.max_retires-retries)
+						logger = logging.getLogger(__name__)
+						logger.warning(
+							f"Rate limit hit (429). "
+							f"Waiting {backoff_time}s before retry"
+						)
+						sleep(backoff_time)
 					retries -= 1
-				
+
 			except Exception as e:
 				if retries == 0:
 					raise
@@ -258,9 +348,12 @@ class Trends:
 
 		if response_codes.count(429) > len(response_codes) / 2:
 			current_delay = self.request_delay or 1
-			print(f"\nWarning: Too many rate limit errors (429). Consider increasing request_delay "
+			logger = logging.getLogger(__name__)
+			logger.warning(
+				f"\nWarning: Too many rate limit errors (429). Consider increasing request_delay "
 				f"to Trends(request_delay={current_delay*2}) before Google implements a long-term "
-				f"rate limit!")
+				f"rate limit!"
+			)
 		last_response.raise_for_status()
 
 	@classmethod
