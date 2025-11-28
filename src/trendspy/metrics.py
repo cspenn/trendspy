@@ -17,7 +17,7 @@ Provides terminal dashboard for live monitoring during execution.
 
 import time
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Deque, cast
 from collections import deque
 import statistics
 
@@ -47,27 +47,30 @@ class MetricsCollector:
         self.window_size = window_size
 
         # Core metrics
-        self.metrics = {
+        response_times: Deque[float] = deque(maxlen=window_size)
+        status_codes: Deque[int] = deque(maxlen=window_size)
+
+        self.metrics: Dict = {
             "requests_total": 0,
             "requests_success": 0,
             "requests_429": 0,
             "requests_failed": 0,
-            "response_times": deque(maxlen=window_size),
-            "status_codes": deque(maxlen=window_size),
+            "response_times": response_times,
+            "status_codes": status_codes,
             "current_delay": 15.0,
             "consecutive_failures": 0,
             "emergency_mode": False,
         }
 
         # Timestamps
-        self.start_time = time.time()
-        self.last_request_time = None
-        self.last_success_time = None
-        self.last_failure_time = None
+        self.start_time: float = time.time()
+        self.last_request_time: Optional[float] = None
+        self.last_success_time: Optional[float] = None
+        self.last_failure_time: Optional[float] = None
 
         # Historical tracking
-        self.hourly_requests = deque(maxlen=60)  # Track requests per minute
-        self.hourly_timestamps = deque(maxlen=60)
+        self.hourly_requests: Deque[int] = deque(maxlen=60)  # Track requests per minute
+        self.hourly_timestamps: Deque[float] = deque(maxlen=60)
 
         logger.info("MetricsCollector initialized")
 
