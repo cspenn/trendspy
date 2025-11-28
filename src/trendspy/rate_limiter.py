@@ -21,6 +21,7 @@ import logging
 import random
 from collections import deque
 from datetime import datetime, timedelta
+from typing import Deque
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ class AdaptiveRateLimiter:
         self.emergency_multiplier = emergency_multiplier
 
         # Sliding window of request timestamps
-        self.request_times = deque(maxlen=requests_per_hour)
+        self.request_times: Deque[datetime] = deque(maxlen=requests_per_hour)
 
         # Circuit breaker state
         self.consecutive_failures = 0
