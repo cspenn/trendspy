@@ -13,7 +13,7 @@ Features:
 
 import json
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from pathlib import Path
 import statistics
 
@@ -45,7 +45,7 @@ class ConfigTuner:
             history_file: Path to save tuning history
         """
         self.history_file = Path(history_file)
-        self.performance_history = []
+        self.performance_history: List[Dict[str, float]] = []
 
         # Load existing history if available
         self._load_history()
