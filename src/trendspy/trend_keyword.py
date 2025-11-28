@@ -106,8 +106,8 @@ class TrendKeyword:
 
         return f"{self.__class__.__name__}({components!r})"
 
-    def __str__(self):
-        """Returns a human-readable string representation."""
+    def detailed_str(self):
+        """Returns a detailed human-readable string representation."""
         timeframe = datetime.fromtimestamp(self.started_timestamp[0]).strftime(
             "%Y-%m-%d %H:%M:%S"
         )
