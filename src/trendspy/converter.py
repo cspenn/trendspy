@@ -1,3 +1,4 @@
+# start src/trendspy/converter.py
 import re
 from datetime import datetime, timezone
 
@@ -239,3 +240,4 @@ class TrendsDataConverter:
             )
         df = pd.DataFrame(res, index=timestamps[-max_len:])
         return df
+# end src/trendspy/converter.py

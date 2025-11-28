@@ -1,3 +1,4 @@
+# start src/trendspy/trend_keyword.py
 from datetime import datetime, timezone
 from typing import Optional, List
 from .news_article import NewsArticle
@@ -283,3 +284,4 @@ class TrendKeywordLite:
         )
         s += "\nNews           : {} news".format(len(self.news)) if self.news else ""
         return s
+# end src/trendspy/trend_keyword.py

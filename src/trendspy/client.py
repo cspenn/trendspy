@@ -1,3 +1,4 @@
+# start src/trendspy/client.py
 import re
 import json
 import logging
@@ -949,3 +950,4 @@ class Trends:
             return list(self._geo_cache[cur_language].name_to_location.values())
 
         return self._geo_cache[cur_language].partial_search(find)
+# end src/trendspy/client.py

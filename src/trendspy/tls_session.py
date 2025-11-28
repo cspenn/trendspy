@@ -1,3 +1,4 @@
+# start src/trendspy/tls_session.py
 """
 TLS Impersonation Session Wrapper
 
@@ -136,3 +137,4 @@ class TLSImpersonationSession:
     def __exit__(self, *args):
         """Context manager exit."""
         self.close()
+# end src/trendspy/tls_session.py

@@ -1,3 +1,4 @@
+# start src/trendspy/config_tuner.py
 """
 Self-Tuning Configuration Optimizer
 
@@ -225,3 +226,4 @@ class ConfigTuner:
         self.performance_history = []
         self._save_history()
         logger.info("ConfigTuner history cleared")
+# end src/trendspy/config_tuner.py

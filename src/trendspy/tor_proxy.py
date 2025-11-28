@@ -1,3 +1,4 @@
+# start src/trendspy/tor_proxy.py
 """
 Free Tor proxy rotation for IP diversity.
 
@@ -189,3 +190,4 @@ def create_tor_proxy(
     except Exception as e:
         logger.warning(f"Tor not available: {e}")
         return None
+# end src/trendspy/tor_proxy.py

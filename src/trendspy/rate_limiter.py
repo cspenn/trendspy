@@ -1,3 +1,4 @@
+# start src/trendspy/rate_limiter.py
 """
 Advanced rate limiting for Google Trends.
 
@@ -286,3 +287,4 @@ class CircuitBreakerError(Exception):
     """Raised when circuit breaker is triggered."""
 
     pass
+# end src/trendspy/rate_limiter.py

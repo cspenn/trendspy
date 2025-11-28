@@ -1,3 +1,4 @@
+# start src/trendspy/quota_analyzer.py
 """
 Quota Window Detection and Prediction
 
@@ -183,3 +184,4 @@ class QuotaAnalyzer:
         self.failure_timestamps.clear()
         self.detected_window = None
         logger.info("QuotaAnalyzer reset")
+# end src/trendspy/quota_analyzer.py

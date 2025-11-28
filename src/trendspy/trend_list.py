@@ -1,3 +1,4 @@
+# start src/trendspy/trend_list.py
 from typing import List, Union, Dict
 from .constants import TREND_TOPICS
 from .trend_keyword import TrendKeyword
@@ -67,3 +68,4 @@ class TrendList(list):
         if not self:
             return "[]"
         return "[\n " + ",\n ".join(trend.brief_summary() for trend in self) + "\n]"
+# end src/trendspy/trend_list.py
