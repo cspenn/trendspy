@@ -190,4 +190,6 @@ def create_tor_proxy(
     except Exception as e:
         logger.warning(f"Tor not available: {e}")
         return None
+
+
 # end src/trendspy/tor_proxy.py

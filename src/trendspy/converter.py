@@ -101,9 +101,7 @@ class TrendsDataConverter:
         if ("isPartial" in timeline_data[-1]) or any(
             "isPartial" in row for row in timeline_data
         ):
-            column_data["isPartial"] = extract_column(
-                timeline_data, "isPartial", False
-            )
+            column_data["isPartial"] = extract_column(timeline_data, "isPartial", False)
 
         # Extract timestamps
         timestamps = extract_column(
@@ -240,4 +238,6 @@ class TrendsDataConverter:
             )
         df = pd.DataFrame(res, index=timestamps[-max_len:])
         return df
+
+
 # end src/trendspy/converter.py

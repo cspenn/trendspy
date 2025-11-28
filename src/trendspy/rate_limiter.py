@@ -287,4 +287,6 @@ class CircuitBreakerError(Exception):
     """Raised when circuit breaker is triggered."""
 
     pass
+
+
 # end src/trendspy/rate_limiter.py

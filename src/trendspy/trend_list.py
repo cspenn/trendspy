@@ -68,4 +68,6 @@ class TrendList(list):
         if not self:
             return "[]"
         return "[\n " + ",\n ".join(trend.brief_summary() for trend in self) + "\n]"
+
+
 # end src/trendspy/trend_list.py

@@ -354,14 +354,15 @@ class Trends:
                 # Exponential backoff
                 backoff_time = 2 ** (self.max_retires - retries_left)
                 logger.warning(
-                    f"Rate limit hit (429). "
-                    f"Waiting {backoff_time}s before retry"
+                    f"Rate limit hit (429). " f"Waiting {backoff_time}s before retry"
                 )
                 sleep(backoff_time)
             return (False, retries_left - 1)
 
     @staticmethod
-    def _emit_rate_limit_warning(response_codes: List[int], current_delay: float) -> None:
+    def _emit_rate_limit_warning(
+        response_codes: List[int], current_delay: float
+    ) -> None:
         """Emit warning if too many 429 rate limit errors occurred."""
         if response_codes.count(429) > len(response_codes) / 2:
             logger.warning(
@@ -950,4 +951,6 @@ class Trends:
             return list(self._geo_cache[cur_language].name_to_location.values())
 
         return self._geo_cache[cur_language].partial_search(find)
+
+
 # end src/trendspy/client.py

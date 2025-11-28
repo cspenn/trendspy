@@ -96,7 +96,8 @@ class TLSImpersonationSession:
         kwargs["headers"].update(self.headers)
 
         if self._using_curl_cffi:
-            return self.session.get(url, impersonate=self.browser, **kwargs)  # type: ignore
+            # type: ignore[call-arg]
+            return self.session.get(url, impersonate=self.browser, **kwargs)
         else:
             return self.session.get(url, **kwargs)
 
@@ -117,7 +118,8 @@ class TLSImpersonationSession:
         kwargs["headers"].update(self.headers)
 
         if self._using_curl_cffi:
-            return self.session.post(url, impersonate=self.browser, **kwargs)  # type: ignore
+            # type: ignore[call-arg]
+            return self.session.post(url, impersonate=self.browser, **kwargs)
         else:
             return self.session.post(url, **kwargs)
 
@@ -137,4 +139,6 @@ class TLSImpersonationSession:
     def __exit__(self, *args):
         """Context manager exit."""
         self.close()
+
+
 # end src/trendspy/tls_session.py

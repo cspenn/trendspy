@@ -230,7 +230,9 @@ class TrendKeywordLite:
 
         # Strategy 3: IDs for dedup
         ids = data.get("idsForDedup", "")
-        return list(set(word for item in ids for word in item.split(" "))) if ids else []
+        return (
+            list(set(word for item in ids for word in item.split(" "))) if ids else []
+        )
 
     @staticmethod
     def _extract_metadata(data: dict) -> tuple:
@@ -239,7 +241,9 @@ class TrendKeywordLite:
         link = data.get("shareUrl") or data.get("link")
         started = data.get("pubDate")
         picture = data.get("picture") or data.get("image", {}).get("imageUrl")
-        picture_source = data.get("picture_source") or data.get("image", {}).get("source")
+        picture_source = data.get("picture_source") or data.get("image", {}).get(
+            "source"
+        )
         articles = data.get("articles") or data.get("news_item") or []
         return volume, link, started, picture, picture_source, articles
 
@@ -248,7 +252,14 @@ class TrendKeywordLite:
         """Create TrendKeywordLite from API response data."""
         title = cls._extract_title(data)
         trend_keywords = cls._extract_trend_keywords(data)
-        volume, link, started, picture, picture_source, articles = cls._extract_metadata(data)
+        (
+            volume,
+            link,
+            started,
+            picture,
+            picture_source,
+            articles,
+        ) = cls._extract_metadata(data)
 
         return cls(
             keyword=title,
@@ -284,4 +295,6 @@ class TrendKeywordLite:
         )
         s += "\nNews           : {} news".format(len(self.news)) if self.news else ""
         return s
+
+
 # end src/trendspy/trend_keyword.py

@@ -275,4 +275,6 @@ class MetricsCollector:
         """Reset all metrics (useful for testing or new runs)."""
         self.__init__(window_size=self.window_size)
         logger.info("Metrics reset")
+
+
 # end src/trendspy/metrics.py
