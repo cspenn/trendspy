@@ -3,17 +3,19 @@ import json
 import logging
 import random
 import requests
+from datetime import datetime, timezone
 from enum import Enum
 from typing import List
 from urllib.parse import quote
-from .utils import *
+from time import sleep
+
+from .utils import decode_escape_text, ensure_list
 from .converter import TrendsDataConverter
-from .trend_keyword import *
-from .news_article import *
+from .trend_keyword import TrendKeyword, TrendKeywordLite
+from .news_article import NewsArticle
 from .timeframe_utils import convert_timeframe, check_timeframe_resolution
 from .hierarchical_search import create_hierarchical_index
 from .trend_list import TrendList
-from time import sleep
 from .rate_limiter import AdaptiveRateLimiter, CircuitBreakerError
 from .session_manager import SessionManager
 
