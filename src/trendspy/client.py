@@ -301,6 +301,74 @@ class Trends:
         req.update(self._default_params)
         return req
 
+    def _check_circuit_breaker(self) -> None:
+        """Check if circuit breaker should trigger and raise error if needed."""
+        if self.rate_limiter.should_circuit_break():
+            raise CircuitBreakerError(
+                f"Circuit breaker triggered after "
+                f"{self.rate_limiter.consecutive_failures} consecutive failures. "
+                f"Please wait before retrying."
+            )
+
+    def _prepare_headers(self, headers: Optional[dict]) -> dict:
+        """Prepare headers with random variations to mimic real browser behavior."""
+        if headers is None:
+            headers = {}
+
+        # Phase 3.3: Header variation (30% of requests)
+        if random.random() < 0.3:
+            accept_variations = [
+                "application/json, text/javascript, */*; q=0.01",
+                "application/json, */*",
+                "application/json, text/plain, */*",
+            ]
+            headers["Accept"] = random.choice(accept_variations)
+
+        # Occasionally add/remove DNT header (10% presence variation)
+        if random.random() < 0.1:
+            if "DNT" not in headers:
+                headers["DNT"] = "1"
+            else:
+                del headers["DNT"]
+
+        return headers
+
+    def _handle_response(self, response, retries_left: int) -> tuple:
+        """
+        Handle response status codes and determine retry behavior.
+
+        Returns:
+            Tuple of (should_return, new_retries_left)
+        """
+        response_code = response.status_code
+
+        if response_code == 200:
+            # Record success
+            self.rate_limiter.record_success()
+            return (True, retries_left)
+        else:
+            if response_code in {429, 302}:
+                # Record failure for rate limiting
+                self.rate_limiter.record_failure()
+                # Exponential backoff
+                backoff_time = 2 ** (self.max_retires - retries_left)
+                logger.warning(
+                    f"Rate limit hit (429). "
+                    f"Waiting {backoff_time}s before retry"
+                )
+                sleep(backoff_time)
+            return (False, retries_left - 1)
+
+    @staticmethod
+    def _emit_rate_limit_warning(response_codes: List[int], current_delay: float) -> None:
+        """Emit warning if too many 429 rate limit errors occurred."""
+        if response_codes.count(429) > len(response_codes) / 2:
+            logger.warning(
+                f"\nWarning: Too many rate limit errors (429). Consider increasing request_delay "
+                f"to Trends(request_delay={current_delay*2}) before Google implements a long-term "
+                f"rate limit!"
+            )
+
     def _get(self, url, params=None, headers=None):
         """
         Make HTTP GET request with advanced rate limiting and retry logic.
@@ -318,80 +386,37 @@ class Trends:
                 requests.HTTPError: On HTTP errors
                 requests.exceptions.RequestException: For network-related errors
         """
-        # NEW: Check circuit breaker before attempting request
-        if self.rate_limiter.should_circuit_break():
-            raise CircuitBreakerError(
-                f"Circuit breaker triggered after "
-                f"{self.rate_limiter.consecutive_failures} consecutive failures. "
-                f"Please wait before retrying."
-            )
-
-        # NEW: Enforce rate limits before request
+        # Check circuit breaker and enforce rate limits
+        self._check_circuit_breaker()
         self.rate_limiter.wait_if_needed()
 
-        # Phase 3.3: Header variation (30% of requests)
-        # Vary Accept header to mimic real browser behavior
-        if headers is None:
-            headers = {}
+        # Prepare headers with variations
+        headers = self._prepare_headers(headers)
 
-        if random.random() < 0.3:
-            accept_variations = [
-                "application/json, text/javascript, */*; q=0.01",
-                "application/json, */*",
-                "application/json, text/plain, */*",
-            ]
-            headers["Accept"] = random.choice(accept_variations)
-
-        # Occasionally add/remove DNT header (10% presence variation)
-        if random.random() < 0.1:
-            if "DNT" not in headers:
-                headers["DNT"] = "1"
-            else:
-                del headers["DNT"]
-
+        # Retry loop
         retries = self.max_retires
-        response_code = 429
         response_codes = []
         last_response = None
-        req = None
+
         while retries > 0:
             try:
                 req = self.session.get(url, params=params, headers=headers)
                 last_response = req
-                response_code = req.status_code
-                response_codes.append(response_code)
+                response_codes.append(req.status_code)
 
-                if response_code == 200:
-                    # NEW: Record success
-                    self.rate_limiter.record_success()
+                # Handle response (returns True if success)
+                should_return, retries = self._handle_response(req, retries)
+                if should_return:
                     return req
-                else:
-                    if response_code in {429, 302}:
-                        # NEW: Record failure for rate limiting
-                        self.rate_limiter.record_failure()
-                        # Exponential backoff
-                        backoff_time = 2 ** (self.max_retires - retries)
-                        logger = logging.getLogger(__name__)
-                        logger.warning(
-                            f"Rate limit hit (429). "
-                            f"Waiting {backoff_time}s before retry"
-                        )
-                        sleep(backoff_time)
-                    retries -= 1
 
             except Exception:
                 if retries == 0:
                     raise
                 retries -= 1
 
-        if response_codes.count(429) > len(response_codes) / 2:
-            current_delay = self.request_delay or 1
-            logger = logging.getLogger(__name__)
-            logger.warning(
-                f"\nWarning: Too many rate limit errors (429). Consider increasing request_delay "
-                f"to Trends(request_delay={current_delay*2}) before Google implements a long-term "
-                f"rate limit!"
-            )
+        # Emit warning if too many rate limit errors
+        current_delay = self.request_delay or 1
+        self._emit_rate_limit_warning(response_codes, current_delay)
         last_response.raise_for_status()
 
     @classmethod
