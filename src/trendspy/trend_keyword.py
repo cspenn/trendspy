@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from typing import Optional, List
 from .news_article import NewsArticle
 from .utils import ensure_list, truncate_string
 from .constants import TREND_TOPICS
@@ -204,32 +205,49 @@ class TrendKeywordLite:
     def _parse_pub_date(pub_date):
         return int(datetime.strptime(pub_date, "%a, %d %b %Y %H:%M:%S %z").timestamp())
 
-    @classmethod
-    def from_api(cls, data):
+    @staticmethod
+    def _extract_title(data: dict) -> Optional[str]:
+        """Extract title from API data."""
         title = data.get("title")
         if isinstance(title, dict):
-            title = title.get("query")
+            return title.get("query")
+        return title
+
+    @staticmethod
+    def _extract_trend_keywords(data: dict) -> List[str]:
+        """Extract trend keywords using fallback strategy."""
+        # Strategy 1: Related queries
+        keywords = [item.get("query") for item in data.get("relatedQueries", [])]
+        if keywords:
+            return keywords
+
+        # Strategy 2: Description field
+        if "description" in data:
+            keywords = data["description"].split(", ")
+            if keywords:
+                return keywords
+
+        # Strategy 3: IDs for dedup
+        ids = data.get("idsForDedup", "")
+        return list(set(word for item in ids for word in item.split(" "))) if ids else []
+
+    @staticmethod
+    def _extract_metadata(data: dict) -> tuple:
+        """Extract volume, link, dates, images, and articles."""
         volume = data.get("formattedTraffic") or data.get("approx_traffic")
-        trend_keywords = [item.get("query") for item in data.get("relatedQueries", [])]
-        trend_keywords = trend_keywords or (
-            data.get("description", "").split(", ") if "description" in data else None
-        )
-        trend_keywords = trend_keywords or list(
-            set(
-                [
-                    word
-                    for item in data.get("idsForDedup", "")
-                    for word in item.split(" ")
-                ]
-            )
-        )
         link = data.get("shareUrl") or data.get("link")
         started = data.get("pubDate")
         picture = data.get("picture") or data.get("image", {}).get("imageUrl")
-        picture_source = data.get("picture_source") or data.get("image", {}).get(
-            "source"
-        )
+        picture_source = data.get("picture_source") or data.get("image", {}).get("source")
         articles = data.get("articles") or data.get("news_item") or []
+        return volume, link, started, picture, picture_source, articles
+
+    @classmethod
+    def from_api(cls, data):
+        """Create TrendKeywordLite from API response data."""
+        title = cls._extract_title(data)
+        trend_keywords = cls._extract_trend_keywords(data)
+        volume, link, started, picture, picture_source, articles = cls._extract_metadata(data)
 
         return cls(
             keyword=title,
