@@ -10,6 +10,16 @@ Main components:
 - BatchPeriod: Enum for specifying time periods in batch operations
 - TrendKeyword: Class representing a trending search term with metadata
 - NewsArticle: Class representing news articles related to trends
+- AdaptiveRateLimiter: Advanced rate limiting with emergency mode and circuit breaker
+- SessionManager: Session management with cookie persistence
+- TorProxyRotator: Free IP rotation using Tor network
+
+Enhanced features (Trust Insights fork):
+- Advanced rate limiting with token bucket + sliding window
+- Automatic emergency mode on persistent failures
+- Circuit breaker pattern to prevent API hammering
+- Session persistence across runs
+- Optional Tor integration for IP diversity
 
 Project links:
     Homepage: https://github.com/sdil87/trendspy
@@ -20,6 +30,21 @@ Project links:
 from .client import Trends, BatchPeriod
 from .trend_keyword import TrendKeyword, TrendKeywordLite
 from .news_article import NewsArticle
+from .rate_limiter import AdaptiveRateLimiter, CircuitBreakerError
+from .session_manager import SessionManager
+from .tor_proxy import TorProxyRotator, create_tor_proxy
 
-__version__ = "0.1.6"
-__all__ = ['Trends', 'BatchPeriod', 'TrendKeyword', 'TrendKeywordLite', 'NewsArticle', 'TrendList']
+__version__ = "0.2.0-enhanced"
+__all__ = [
+    "Trends",
+    "BatchPeriod",
+    "TrendKeyword",
+    "TrendKeywordLite",
+    "NewsArticle",
+    "TrendList",
+    "AdaptiveRateLimiter",
+    "CircuitBreakerError",
+    "SessionManager",
+    "TorProxyRotator",
+    "create_tor_proxy",
+]

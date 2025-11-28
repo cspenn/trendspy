@@ -17,5 +17,5 @@ TREND_TOPICS = {
     16: "Shopping",
     17: "Sports",
     18: "Technology",
-    19: "Travel and Transportation"
+    19: "Travel and Transportation",
 }

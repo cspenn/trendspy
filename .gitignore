@@ -19,6 +19,12 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+.claude
+.serena
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+checkpython.sh
 
 # Environments
 .env

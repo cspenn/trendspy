@@ -15,10 +15,11 @@ TLS fingerprints, which dramatically reduces blocking.
 """
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Any
 
 try:
     from curl_cffi import requests as curl_requests
+
     CURL_CFFI_AVAILABLE = True
 except ImportError:
     CURL_CFFI_AVAILABLE = False
@@ -46,7 +47,7 @@ class TLSImpersonationSession:
     with a warning.
     """
 
-    def __init__(self, browser: str = 'chrome131'):
+    def __init__(self, browser: str = "chrome131"):
         """
         Initialize TLS impersonation session.
 
@@ -62,6 +63,7 @@ class TLSImpersonationSession:
                 "Install with: pip install curl-cffi>=0.7.0"
             )
             import requests
+
             self.session = requests.Session()
             self._using_curl_cffi = False
         else:
@@ -87,9 +89,9 @@ class TLSImpersonationSession:
             Response object
         """
         # Merge instance headers with any passed headers
-        if 'headers' not in kwargs:
-            kwargs['headers'] = {}
-        kwargs['headers'].update(self.headers)
+        if "headers" not in kwargs:
+            kwargs["headers"] = {}
+        kwargs["headers"].update(self.headers)
 
         if self._using_curl_cffi:
             return self.session.get(url, impersonate=self.browser, **kwargs)
@@ -108,9 +110,9 @@ class TLSImpersonationSession:
             Response object
         """
         # Merge instance headers with any passed headers
-        if 'headers' not in kwargs:
-            kwargs['headers'] = {}
-        kwargs['headers'].update(self.headers)
+        if "headers" not in kwargs:
+            kwargs["headers"] = {}
+        kwargs["headers"].update(self.headers)
 
         if self._using_curl_cffi:
             return self.session.post(url, impersonate=self.browser, **kwargs)

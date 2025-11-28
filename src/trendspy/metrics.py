@@ -17,7 +17,7 @@ Provides terminal dashboard for live monitoring during execution.
 
 import time
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from collections import deque
 import statistics
 
@@ -48,15 +48,15 @@ class MetricsCollector:
 
         # Core metrics
         self.metrics = {
-            'requests_total': 0,
-            'requests_success': 0,
-            'requests_429': 0,
-            'requests_failed': 0,
-            'response_times': deque(maxlen=window_size),
-            'status_codes': deque(maxlen=window_size),
-            'current_delay': 15.0,
-            'consecutive_failures': 0,
-            'emergency_mode': False,
+            "requests_total": 0,
+            "requests_success": 0,
+            "requests_429": 0,
+            "requests_failed": 0,
+            "response_times": deque(maxlen=window_size),
+            "status_codes": deque(maxlen=window_size),
+            "current_delay": 15.0,
+            "consecutive_failures": 0,
+            "emergency_mode": False,
         }
 
         # Timestamps
@@ -71,13 +71,15 @@ class MetricsCollector:
 
         logger.info("MetricsCollector initialized")
 
-    def record_request(self,
-                      success: bool,
-                      response_time: float,
-                      status_code: int,
-                      current_delay: Optional[float] = None,
-                      consecutive_failures: int = 0,
-                      emergency_mode: bool = False):
+    def record_request(
+        self,
+        success: bool,
+        response_time: float,
+        status_code: int,
+        current_delay: Optional[float] = None,
+        consecutive_failures: int = 0,
+        emergency_mode: bool = False,
+    ):
         """
         Record metrics for a single request.
 
@@ -89,26 +91,26 @@ class MetricsCollector:
             consecutive_failures: Number of consecutive failures
             emergency_mode: Whether in emergency mode
         """
-        self.metrics['requests_total'] += 1
+        self.metrics["requests_total"] += 1
 
         if success:
-            self.metrics['requests_success'] += 1
+            self.metrics["requests_success"] += 1
             self.last_success_time = time.time()
         else:
-            self.metrics['requests_failed'] += 1
+            self.metrics["requests_failed"] += 1
             self.last_failure_time = time.time()
 
         if status_code == 429:
-            self.metrics['requests_429'] += 1
+            self.metrics["requests_429"] += 1
 
-        self.metrics['response_times'].append(response_time)
-        self.metrics['status_codes'].append(status_code)
+        self.metrics["response_times"].append(response_time)
+        self.metrics["status_codes"].append(status_code)
 
         if current_delay is not None:
-            self.metrics['current_delay'] = current_delay
+            self.metrics["current_delay"] = current_delay
 
-        self.metrics['consecutive_failures'] = consecutive_failures
-        self.metrics['emergency_mode'] = emergency_mode
+        self.metrics["consecutive_failures"] = consecutive_failures
+        self.metrics["emergency_mode"] = emergency_mode
 
         self.last_request_time = time.time()
 
@@ -127,10 +129,10 @@ class MetricsCollector:
         Returns:
             Success rate (0-100)
         """
-        if self.metrics['requests_total'] == 0:
+        if self.metrics["requests_total"] == 0:
             return 0.0
 
-        return (self.metrics['requests_success'] / self.metrics['requests_total']) * 100
+        return (self.metrics["requests_success"] / self.metrics["requests_total"]) * 100
 
     def get_avg_response_time(self) -> float:
         """
@@ -139,10 +141,10 @@ class MetricsCollector:
         Returns:
             Average response time in seconds, or 0 if no data
         """
-        if not self.metrics['response_times']:
+        if not self.metrics["response_times"]:
             return 0.0
 
-        return statistics.mean(self.metrics['response_times'])
+        return statistics.mean(self.metrics["response_times"])
 
     def get_p95_response_time(self) -> float:
         """
@@ -151,10 +153,10 @@ class MetricsCollector:
         Returns:
             P95 response time in seconds, or 0 if no data
         """
-        if not self.metrics['response_times']:
+        if not self.metrics["response_times"]:
             return 0.0
 
-        sorted_times = sorted(self.metrics['response_times'])
+        sorted_times = sorted(self.metrics["response_times"])
         index = int(len(sorted_times) * 0.95)
         return sorted_times[index] if index < len(sorted_times) else sorted_times[-1]
 
@@ -218,10 +220,10 @@ class MetricsCollector:
             status = "🔴 CRITICAL"
 
         # Emergency mode indicator
-        emergency = "🚨 EMERGENCY" if self.metrics['emergency_mode'] else "✓ Normal"
+        emergency = "🚨 EMERGENCY" if self.metrics["emergency_mode"] else "✓ Normal"
 
         print(f"\n{'='*70}")
-        print(f"GOOGLE TRENDS API - PERFORMANCE DASHBOARD")
+        print("GOOGLE TRENDS API - PERFORMANCE DASHBOARD")
         print(f"{'='*70}")
         print(f"Status: {status}               Emergency Mode: {emergency}")
         print(f"{'-'*70}")
@@ -231,11 +233,11 @@ class MetricsCollector:
         print(f"  ├─ Failed:         {self.metrics['requests_failed']:6d}")
         print(f"  └─ 429 Errors:     {self.metrics['requests_429']:6d}")
         print(f"{'-'*70}")
-        print(f"Response Times:")
+        print("Response Times:")
         print(f"  ├─ Average:        {avg_response:6.2f}s")
         print(f"  └─ 95th %ile:      {p95_response:6.2f}s")
         print(f"{'-'*70}")
-        print(f"Rate Limiting:")
+        print("Rate Limiting:")
         print(f"  ├─ Current Delay:  {self.metrics['current_delay']:6.2f}s")
         print(f"  ├─ Consec Fails:   {self.metrics['consecutive_failures']:6d}")
         print(f"  └─ Requests/Hour:  {req_per_hour:6.1f}")
@@ -251,18 +253,18 @@ class MetricsCollector:
             Dict with all key metrics
         """
         return {
-            'success_rate': self.get_success_rate(),
-            'total_requests': self.metrics['requests_total'],
-            'successful_requests': self.metrics['requests_success'],
-            'failed_requests': self.metrics['requests_failed'],
-            'error_429_count': self.metrics['requests_429'],
-            'avg_response_time': self.get_avg_response_time(),
-            'p95_response_time': self.get_p95_response_time(),
-            'current_delay': self.metrics['current_delay'],
-            'consecutive_failures': self.metrics['consecutive_failures'],
-            'emergency_mode': self.metrics['emergency_mode'],
-            'requests_per_hour': self.get_requests_per_hour(),
-            'runtime_seconds': self.get_runtime(),
+            "success_rate": self.get_success_rate(),
+            "total_requests": self.metrics["requests_total"],
+            "successful_requests": self.metrics["requests_success"],
+            "failed_requests": self.metrics["requests_failed"],
+            "error_429_count": self.metrics["requests_429"],
+            "avg_response_time": self.get_avg_response_time(),
+            "p95_response_time": self.get_p95_response_time(),
+            "current_delay": self.metrics["current_delay"],
+            "consecutive_failures": self.metrics["consecutive_failures"],
+            "emergency_mode": self.metrics["emergency_mode"],
+            "requests_per_hour": self.get_requests_per_hour(),
+            "runtime_seconds": self.get_runtime(),
         }
 
     def reset(self):

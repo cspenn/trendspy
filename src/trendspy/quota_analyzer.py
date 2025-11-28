@@ -12,7 +12,7 @@ This helps optimize wait times by:
 
 import time
 import logging
-from typing import List, Optional, Dict
+from typing import Optional, Dict
 from collections import deque
 import numpy as np
 
@@ -94,7 +94,9 @@ class QuotaAnalyzer:
             modal_window = (bins[modal_index] + bins[modal_index + 1]) / 2
 
             self.detected_window = modal_window
-            logger.info(f"Detected quota window: {modal_window:.1f}s ({modal_window/60:.1f}m)")
+            logger.info(
+                f"Detected quota window: {modal_window:.1f}s ({modal_window/60:.1f}m)"
+            )
             return modal_window
 
         except Exception as e:
@@ -166,11 +168,13 @@ class QuotaAnalyzer:
             Dict with stats about detected patterns
         """
         return {
-            'total_successes': len(self.success_timestamps),
-            'total_failures': len(self.failure_timestamps),
-            'detected_window_seconds': self.detected_window,
-            'detected_window_minutes': self.detected_window / 60 if self.detected_window else None,
-            'predicted_next_reset': self.predict_next_reset(),
+            "total_successes": len(self.success_timestamps),
+            "total_failures": len(self.failure_timestamps),
+            "detected_window_seconds": self.detected_window,
+            "detected_window_minutes": self.detected_window / 60
+            if self.detected_window
+            else None,
+            "predicted_next_reset": self.predict_next_reset(),
         }
 
     def reset(self):

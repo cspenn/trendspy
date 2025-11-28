@@ -13,7 +13,6 @@ import random
 import requests
 import time
 from pathlib import Path
-from typing import Optional
 
 from .tls_session import TLSImpersonationSession
 from .browser_profiles import get_random_profile
@@ -24,22 +23,18 @@ logger = logging.getLogger(__name__)
 # Phase 1.1: User-Agent Rotation for anti-detection
 USER_AGENTS = [
     # Chrome 131 (November 2025 - CURRENT)
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     # Chrome 130
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
     # Firefox 132
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:132.0) Gecko/20100101 Firefox/132.0',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0',
-
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:132.0) Gecko/20100101 Firefox/132.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
     # Safari 18 (macOS only)
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15',
-
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
     # Edge 131
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0',
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0",
 ]
 
 
@@ -66,14 +61,15 @@ class SessionManager:
         >>> manager.save_session()  # Persist for next run
     """
 
-    def __init__(self,
-                 session_file: str = '.trendspy_session.pkl',
-                 persist_cookies: bool = True,
-                 use_tls_impersonation: bool = True,
-                 tls_browser: str = 'chrome131',
-                 use_browser_profiles: bool = True,
-                 session_warmup: bool = True):
-
+    def __init__(
+        self,
+        session_file: str = ".trendspy_session.pkl",
+        persist_cookies: bool = True,
+        use_tls_impersonation: bool = True,
+        tls_browser: str = "chrome131",
+        use_browser_profiles: bool = True,
+        session_warmup: bool = True,
+    ):
         self.session_file = Path(session_file)
         self.persist_cookies = persist_cookies
         self.use_tls_impersonation = use_tls_impersonation
@@ -101,7 +97,7 @@ class SessionManager:
         """
         if self.persist_cookies and self.session_file.exists():
             try:
-                with open(self.session_file, 'rb') as f:
+                with open(self.session_file, "rb") as f:
                     session = pickle.load(f)
                     logger.info(
                         f"Loaded existing session from {self.session_file} "
@@ -132,8 +128,7 @@ class SessionManager:
         if self.use_tls_impersonation:
             session = TLSImpersonationSession(browser=self.tls_browser)
             logger.info(
-                f"Created TLS impersonation session "
-                f"(browser={self.tls_browser})"
+                f"Created TLS impersonation session " f"(browser={self.tls_browser})"
             )
         else:
             session = requests.Session()
@@ -146,22 +141,22 @@ class SessionManager:
 
             # Base headers (same for all browsers)
             base_headers = {
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Referer': 'https://trends.google.com/',
-                'Origin': 'https://trends.google.com',
-                'DNT': '1',  # Do Not Track
-                'Connection': 'keep-alive',
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-origin',
+                "Accept": "application/json, text/javascript, */*; q=0.01",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Referer": "https://trends.google.com/",
+                "Origin": "https://trends.google.com",
+                "DNT": "1",  # Do Not Track
+                "Connection": "keep-alive",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
             }
 
             # Merge profile headers (includes UA and Client Hints) with base
             headers = {**base_headers, **profile_headers}
 
-            ua_preview = headers.get('User-Agent', 'Unknown')[:60]
+            ua_preview = headers.get("User-Agent", "Unknown")[:60]
             logger.info(f"Using coherent browser profile: {ua_preview}...")
 
         else:
@@ -170,26 +165,26 @@ class SessionManager:
 
             # Browser-like headers (old method)
             headers = {
-                'User-Agent': selected_ua,
-                'Accept': 'application/json, text/javascript, */*; q=0.01',
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Referer': 'https://trends.google.com/',
-                'Origin': 'https://trends.google.com',
-                'DNT': '1',  # Do Not Track
-                'Connection': 'keep-alive',
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-origin',
-                'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="131", "Google Chrome";v="131"',
-                'Sec-Ch-Ua-Mobile': '?0',
-                'Sec-Ch-Ua-Platform': '"macOS"',
+                "User-Agent": selected_ua,
+                "Accept": "application/json, text/javascript, */*; q=0.01",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Referer": "https://trends.google.com/",
+                "Origin": "https://trends.google.com",
+                "DNT": "1",  # Do Not Track
+                "Connection": "keep-alive",
+                "Sec-Fetch-Dest": "empty",
+                "Sec-Fetch-Mode": "cors",
+                "Sec-Fetch-Site": "same-origin",
+                "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="131", "Google Chrome";v="131"',
+                "Sec-Ch-Ua-Mobile": "?0",
+                "Sec-Ch-Ua-Platform": '"macOS"',
             }
 
             logger.info(f"Using legacy UA rotation: {selected_ua[:50]}...")
 
         # Update headers (works for both TLSImpersonationSession and requests.Session)
-        if hasattr(session, 'headers'):
+        if hasattr(session, "headers"):
             if isinstance(session.headers, dict):
                 session.headers.update(headers)
             else:
@@ -210,7 +205,7 @@ class SessionManager:
             return False
 
         try:
-            with open(self.session_file, 'wb') as f:
+            with open(self.session_file, "wb") as f:
                 pickle.dump(self.session, f)
 
             logger.info(
@@ -289,7 +284,7 @@ class SessionManager:
             logger.debug(f"Warmup step 1/3: Homepage (delay {delay:.2f}s)")
             time.sleep(delay)
 
-            response1 = self.session.get('https://trends.google.com/trends/')
+            response1 = self.session.get("https://trends.google.com/trends/")
             logger.debug(f"Homepage response: {response1.status_code}")
 
             # Step 2: Visit explore page
@@ -297,7 +292,7 @@ class SessionManager:
             logger.debug(f"Warmup step 2/3: Explore page (delay {delay:.2f}s)")
             time.sleep(delay)
 
-            response2 = self.session.get('https://trends.google.com/trends/explore')
+            response2 = self.session.get("https://trends.google.com/trends/explore")
             logger.debug(f"Explore response: {response2.status_code}")
 
             # Step 3: Visit trending searches
@@ -306,7 +301,7 @@ class SessionManager:
             time.sleep(delay)
 
             response3 = self.session.get(
-                'https://trends.google.com/trends/trendingsearches/daily?geo=US'
+                "https://trends.google.com/trends/trendingsearches/daily?geo=US"
             )
             logger.debug(f"Trending response: {response3.status_code}")
 

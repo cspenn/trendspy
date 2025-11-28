@@ -13,13 +13,13 @@ Health States:
 
 import logging
 from enum import Enum
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
 class HealthState(Enum):
     """System health states for graceful degradation."""
+
     HEALTHY = "healthy"
     DEGRADED_MINOR = "degraded_minor"
     DEGRADED_MAJOR = "degraded_major"
@@ -28,6 +28,7 @@ class HealthState(Enum):
 
 class Priority(Enum):
     """Keyword priority levels."""
+
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
@@ -49,10 +50,12 @@ class DegradationManager:
         >>>     # Process keyword
     """
 
-    def __init__(self,
-                 minor_threshold: int = 5,
-                 major_threshold: int = 10,
-                 recovery_successes: int = 3):
+    def __init__(
+        self,
+        minor_threshold: int = 5,
+        major_threshold: int = 10,
+        recovery_successes: int = 3,
+    ):
         """
         Initialize degradation manager.
 
@@ -143,14 +146,18 @@ class DegradationManager:
             # Skip LOW priority only
             should_process = keyword_priority in [Priority.HIGH, Priority.MEDIUM]
             if not should_process:
-                logger.debug(f"Skipping {keyword_priority.value} priority (DEGRADED_MINOR)")
+                logger.debug(
+                    f"Skipping {keyword_priority.value} priority (DEGRADED_MINOR)"
+                )
             return should_process
 
         elif self.health_state == HealthState.DEGRADED_MAJOR:
             # Only HIGH priority
             should_process = keyword_priority == Priority.HIGH
             if not should_process:
-                logger.debug(f"Skipping {keyword_priority.value} priority (DEGRADED_MAJOR)")
+                logger.debug(
+                    f"Skipping {keyword_priority.value} priority (DEGRADED_MAJOR)"
+                )
             return should_process
 
         return False
@@ -163,10 +170,11 @@ class DegradationManager:
             Dict with health state and metrics
         """
         return {
-            'health_state': self.health_state.value,
-            'consecutive_429s': self.consecutive_429s,
-            'consecutive_successes': self.consecutive_successes,
-            'processing_all': self.health_state in [HealthState.HEALTHY, HealthState.RECOVERY],
+            "health_state": self.health_state.value,
+            "consecutive_429s": self.consecutive_429s,
+            "consecutive_successes": self.consecutive_successes,
+            "processing_all": self.health_state
+            in [HealthState.HEALTHY, HealthState.RECOVERY],
         }
 
     def reset(self):

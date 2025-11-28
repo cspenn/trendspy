@@ -13,7 +13,7 @@ Features:
 
 import json
 import logging
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from pathlib import Path
 import statistics
 
@@ -37,7 +37,7 @@ class ConfigTuner:
         >>> suggestion = tuner.auto_tune()
     """
 
-    def __init__(self, history_file: str = '.config_tuning_history.json'):
+    def __init__(self, history_file: str = ".config_tuning_history.json"):
         """
         Initialize config tuner.
 
@@ -56,9 +56,11 @@ class ConfigTuner:
         """Load performance history from file."""
         try:
             if self.history_file.exists():
-                with open(self.history_file, 'r') as f:
+                with open(self.history_file, "r") as f:
                     self.performance_history = json.load(f)
-                logger.info(f"Loaded {len(self.performance_history)} historical sessions")
+                logger.info(
+                    f"Loaded {len(self.performance_history)} historical sessions"
+                )
         except Exception as e:
             logger.warning(f"Could not load tuning history: {e}")
             self.performance_history = []
@@ -66,17 +68,19 @@ class ConfigTuner:
     def _save_history(self):
         """Save performance history to file."""
         try:
-            with open(self.history_file, 'w') as f:
+            with open(self.history_file, "w") as f:
                 json.dump(self.performance_history, f, indent=2)
             logger.debug("Saved tuning history")
         except Exception as e:
             logger.error(f"Could not save tuning history: {e}")
 
-    def record_session(self,
-                      config: Dict,
-                      success_rate: float,
-                      avg_response_time: float,
-                      requests_total: int = 0):
+    def record_session(
+        self,
+        config: Dict,
+        success_rate: float,
+        avg_response_time: float,
+        requests_total: int = 0,
+    ):
         """
         Record performance for a configuration.
 
@@ -87,11 +91,11 @@ class ConfigTuner:
             requests_total: Total requests made
         """
         session_record = {
-            'base_delay': config.get('base_delay', 15),
-            'requests_per_hour': config.get('requests_per_hour', 150),
-            'success_rate': success_rate,
-            'response_time': avg_response_time,
-            'requests_total': requests_total,
+            "base_delay": config.get("base_delay", 15),
+            "requests_per_hour": config.get("requests_per_hour", 150),
+            "success_rate": success_rate,
+            "response_time": avg_response_time,
+            "requests_total": requests_total,
         }
 
         self.performance_history.append(session_record)
@@ -119,8 +123,7 @@ class ConfigTuner:
 
         # Filter to acceptable success rates
         acceptable = [
-            s for s in self.performance_history
-            if s['success_rate'] >= min_success_rate
+            s for s in self.performance_history if s["success_rate"] >= min_success_rate
         ]
 
         if not acceptable:
@@ -128,13 +131,13 @@ class ConfigTuner:
             return None
 
         # Find best by success rate, then by speed
-        best = max(acceptable, key=lambda x: (x['success_rate'], -x['response_time']))
+        best = max(acceptable, key=lambda x: (x["success_rate"], -x["response_time"]))
 
         suggestion = {
-            'base_delay': best['base_delay'],
-            'requests_per_hour': best['requests_per_hour'],
-            'expected_success_rate': best['success_rate'],
-            'expected_response_time': best['response_time'],
+            "base_delay": best["base_delay"],
+            "requests_per_hour": best["requests_per_hour"],
+            "expected_success_rate": best["success_rate"],
+            "expected_response_time": best["response_time"],
         }
 
         logger.info(
@@ -160,10 +163,10 @@ class ConfigTuner:
 
         # Analyze recent performance (last 10 sessions)
         recent = self.performance_history[-10:]
-        avg_success = statistics.mean([s['success_rate'] for s in recent])
+        avg_success = statistics.mean([s["success_rate"] for s in recent])
 
         # Current config (assume latest)
-        current_delay = recent[-1]['base_delay']
+        current_delay = recent[-1]["base_delay"]
 
         adjustment = None
 
@@ -171,19 +174,23 @@ class ConfigTuner:
             # Poor performance - increase delays
             new_delay = current_delay + 2
             adjustment = {
-                'base_delay': new_delay,
-                'reason': f'Low success rate ({avg_success:.1f}%) - increasing delays',
+                "base_delay": new_delay,
+                "reason": f"Low success rate ({avg_success:.1f}%) - increasing delays",
             }
-            logger.info(f"Auto-tune: {current_delay}s → {new_delay}s (low success rate)")
+            logger.info(
+                f"Auto-tune: {current_delay}s → {new_delay}s (low success rate)"
+            )
 
         elif avg_success > 95 and current_delay > 5:
             # Excellent performance - try speeding up
             new_delay = max(5, current_delay - 1)
             adjustment = {
-                'base_delay': new_delay,
-                'reason': f'High success rate ({avg_success:.1f}%) - decreasing delays',
+                "base_delay": new_delay,
+                "reason": f"High success rate ({avg_success:.1f}%) - decreasing delays",
             }
-            logger.info(f"Auto-tune: {current_delay}s → {new_delay}s (high success rate)")
+            logger.info(
+                f"Auto-tune: {current_delay}s → {new_delay}s (high success rate)"
+            )
 
         else:
             logger.debug(f"No adjustment needed (success_rate={avg_success:.1f}%)")
@@ -199,19 +206,21 @@ class ConfigTuner:
         """
         if not self.performance_history:
             return {
-                'total_sessions': 0,
-                'avg_success_rate': 0,
-                'best_success_rate': 0,
+                "total_sessions": 0,
+                "avg_success_rate": 0,
+                "best_success_rate": 0,
             }
 
-        success_rates = [s['success_rate'] for s in self.performance_history]
+        success_rates = [s["success_rate"] for s in self.performance_history]
 
         return {
-            'total_sessions': len(self.performance_history),
-            'avg_success_rate': statistics.mean(success_rates),
-            'best_success_rate': max(success_rates),
-            'worst_success_rate': min(success_rates),
-            'recent_avg': statistics.mean([s['success_rate'] for s in self.performance_history[-10:]]),
+            "total_sessions": len(self.performance_history),
+            "avg_success_rate": statistics.mean(success_rates),
+            "best_success_rate": max(success_rates),
+            "worst_success_rate": min(success_rates),
+            "recent_avg": statistics.mean(
+                [s["success_rate"] for s in self.performance_history[-10:]]
+            ),
         }
 
     def reset(self):
