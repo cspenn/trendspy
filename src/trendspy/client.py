@@ -19,6 +19,8 @@ from .trend_list import TrendList
 from .rate_limiter import AdaptiveRateLimiter, CircuitBreakerError
 from .session_manager import SessionManager
 
+logger = logging.getLogger(__name__)
+
 
 class TrendsQuotaExceededError(Exception):
     """Raised when the Google Trends API quota is exceeded for related queries/topics."""
@@ -399,7 +401,7 @@ class Trends:
         # If matches found, decode and return result
         if matches:
             return json.loads(decode_escape_text(matches[0]))  # Take first match
-        print("Failed to extract JSON data")
+        logger.error("🛑 Failed to extract JSON data")
 
     def _token_to_data(self, token):
         URL = {
