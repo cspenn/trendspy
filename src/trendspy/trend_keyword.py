@@ -149,7 +149,7 @@ class TrendKeyword:
         else:
             p.text(self.brief_summary())
 
-    def __format__(self, format_spec):
+    def __format__(self, _format_spec):
         """Implements formatting for f-strings and format() method."""
         return self.brief_summary()
 

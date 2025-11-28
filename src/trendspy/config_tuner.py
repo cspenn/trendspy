@@ -147,12 +147,9 @@ class ConfigTuner:
 
         return suggestion
 
-    def auto_tune(self, current_success_rate: float) -> Optional[Dict]:
+    def auto_tune(self) -> Optional[Dict]:
         """
         Automatically suggest configuration adjustments.
-
-        Args:
-            current_success_rate: Current success rate percentage
 
         Returns:
             Dict with tuning adjustments, or None if no change needed

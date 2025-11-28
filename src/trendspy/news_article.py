@@ -30,7 +30,6 @@ class NewsArticle:
         picture=None,
         time=None,
         snippet=None,
-        article_ids=None,
     ):
         self.title = title
         self.url = url
