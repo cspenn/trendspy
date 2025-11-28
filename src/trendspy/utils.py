@@ -118,9 +118,6 @@ def get_utc_offset_minutes():
     Positive values for time zones ahead of UTC (eastward),
     negative values for time zones behind UTC (westward).
     """
-    # Get current local time
-    now = datetime.now()
-
     # Get offset in seconds
     utc_offset = -time.timezone
 
