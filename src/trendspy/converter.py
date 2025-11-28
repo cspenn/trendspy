@@ -86,7 +86,37 @@ class TrendsDataConverter:
         return pd.DataFrame({"time": timestamps, **df_data})
 
     @staticmethod
+    def _process_column_data(data: list, index: int) -> dict:
+        """Process single column index from multirange data."""
+        timeline_data = [item["columnData"][index] for item in data]
+
+        column_data = {}
+        # Extract values
+        column_data["values"] = extract_column(
+            timeline_data, "value", f=lambda x: x if x != -1 else None
+        )
+
+        # Extract isPartial if present
+        if ("isPartial" in timeline_data[-1]) or any(
+            "isPartial" in row for row in timeline_data
+        ):
+            column_data["isPartial"] = extract_column(
+                timeline_data, "isPartial", False
+            )
+
+        # Extract timestamps
+        timestamps = extract_column(
+            timeline_data, "time", f=lambda ts: int(ts) if ts else None
+        )
+        column_data["timestamps"] = np.array(timestamps, dtype="datetime64[s]").astype(
+            "datetime64[ns]"
+        )
+
+        return column_data
+
+    @staticmethod
     def multirange_interest_over_time(data, bullets=None):
+        """Convert multirange interest over time data to DataFrame."""
         data = data.get("default", {}).get("timelineData", [{}])
         if "columnData" not in data[0]:
             return pd.DataFrame()
@@ -97,25 +127,14 @@ class TrendsDataConverter:
 
         df_data = {}
         for i in range(num_parts):
-            timeline_data = [item["columnData"][i] for item in data]
-            df_data[bullets[i]] = extract_column(
-                timeline_data, "value", f=lambda x: x if x != -1 else None
-            )
+            column_data = TrendsDataConverter._process_column_data(data, i)
+            df_data[bullets[i]] = column_data["values"]
 
-            if ("isPartial" in timeline_data[-1]) or any(
-                "isPartial" in row for row in timeline_data
-            ):
-                df_data["isPartial_" + str(i)] = extract_column(
-                    timeline_data, "isPartial", False
-                )
+            if "isPartial" in column_data:
+                df_data["isPartial_" + str(i)] = column_data["isPartial"]
 
-            timestamps = extract_column(
-                timeline_data, "time", f=lambda ts: int(ts) if ts else None
-            )
-            timestamps = np.array(timestamps, dtype="datetime64[s]").astype(
-                "datetime64[ns]"
-            )
-            df_data["index_" + str(i)] = timestamps
+            df_data["index_" + str(i)] = column_data["timestamps"]
+
         return pd.DataFrame(df_data)
 
     @staticmethod
