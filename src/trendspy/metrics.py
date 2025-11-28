@@ -17,7 +17,7 @@ Provides terminal dashboard for live monitoring during execution.
 
 import time
 import logging
-from typing import Dict, Optional, Deque, cast
+from typing import Dict, Optional, Deque
 from collections import deque
 import statistics
 

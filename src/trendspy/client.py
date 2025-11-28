@@ -831,7 +831,9 @@ class Trends:
         )
         return data
 
-    def categories(self, find: Optional[str] = None, language: Optional[str] = None) -> List[dict]:
+    def categories(
+        self, find: Optional[str] = None, language: Optional[str] = None
+    ) -> List[dict]:
         """
         Search for categories in Google Trends data.
 
@@ -872,7 +874,9 @@ class Trends:
 
         return self._category_cache[cur_language].partial_search(find)
 
-    def geo(self, find: Optional[str] = None, language: Optional[str] = None) -> List[dict]:
+    def geo(
+        self, find: Optional[str] = None, language: Optional[str] = None
+    ) -> List[dict]:
         """
         Search for geographical locations in Google Trends data.
 

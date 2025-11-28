@@ -15,7 +15,7 @@ TLS fingerprints, which dramatically reduces blocking.
 """
 
 import logging
-from typing import Any, Union, Optional
+from typing import Any, Union
 import requests
 
 try:

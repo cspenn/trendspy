@@ -15,8 +15,8 @@ import requests
 from typing import Optional
 
 try:
-    from stem import Signal
-    from stem.control import Controller
+    from stem import Signal  # type: ignore
+    from stem.control import Controller  # type: ignore
 
     STEM_AVAILABLE = True
 except ImportError:
