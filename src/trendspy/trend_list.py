@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import List, Union, Dict
 from .constants import TREND_TOPICS
 from .trend_keyword import TrendKeyword
 
@@ -55,7 +55,7 @@ class TrendList(list):
         Returns:
             dict: Mapping of topic names to count of trends
         """
-        topic_counts = {}
+        topic_counts: Dict[str, int] = {}
         for trend in self:
             for topic_id in trend.topics:
                 topic_name = TREND_TOPICS.get(topic_id, f"Unknown ({topic_id})")
