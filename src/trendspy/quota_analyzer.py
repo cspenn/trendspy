@@ -12,7 +12,7 @@ This helps optimize wait times by:
 
 import time
 import logging
-from typing import Optional, Dict
+from typing import Optional, Dict, Deque
 from collections import deque
 import numpy as np
 
@@ -40,9 +40,9 @@ class QuotaAnalyzer:
             history_size: Number of historical results to track
         """
         self.history_size = history_size
-        self.success_timestamps = deque(maxlen=history_size)
-        self.failure_timestamps = deque(maxlen=history_size)
-        self.detected_window = None  # Detected quota window in seconds
+        self.success_timestamps: Deque[float] = deque(maxlen=history_size)
+        self.failure_timestamps: Deque[float] = deque(maxlen=history_size)
+        self.detected_window: Optional[float] = None  # Detected quota window in seconds
 
         logger.info(f"QuotaAnalyzer initialized (history_size={history_size})")
 
@@ -172,7 +172,7 @@ class QuotaAnalyzer:
             "total_failures": len(self.failure_timestamps),
             "detected_window_seconds": self.detected_window,
             "detected_window_minutes": self.detected_window / 60
-            if self.detected_window
+            if self.detected_window is not None
             else None,
             "predicted_next_reset": self.predict_next_reset(),
         }
