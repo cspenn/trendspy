@@ -15,15 +15,18 @@ TLS fingerprints, which dramatically reduces blocking.
 """
 
 import logging
-from typing import Any
+from typing import Any, Union, Optional
+import requests
 
 try:
     from curl_cffi import requests as curl_requests
+    from curl_cffi.requests import Session as CurlSession
 
     CURL_CFFI_AVAILABLE = True
 except ImportError:
     CURL_CFFI_AVAILABLE = False
-    curl_requests = None
+    curl_requests = None  # type: ignore
+    CurlSession = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -62,20 +65,18 @@ class TLSImpersonationSession:
                 "curl_cffi not available. Falling back to standard requests. "
                 "Install with: pip install curl-cffi>=0.7.0"
             )
-            import requests
-
-            self.session = requests.Session()
+            self.session: Union[requests.Session, Any] = requests.Session()
             self._using_curl_cffi = False
         else:
             logger.info(f"Creating TLS impersonation session (browser={browser})")
-            self.session = curl_requests.Session()
+            self.session = curl_requests.Session()  # type: ignore
             self._using_curl_cffi = True
 
         # Store headers separately (compatible with both session types)
-        self.headers = {}
+        self.headers: dict = {}
 
         # Initialize proxies attribute (compatible with requests.Session interface)
-        self.proxies = {}
+        self.proxies: dict = {}
 
     def get(self, url: str, **kwargs) -> Any:
         """
@@ -94,7 +95,7 @@ class TLSImpersonationSession:
         kwargs["headers"].update(self.headers)
 
         if self._using_curl_cffi:
-            return self.session.get(url, impersonate=self.browser, **kwargs)
+            return self.session.get(url, impersonate=self.browser, **kwargs)  # type: ignore
         else:
             return self.session.get(url, **kwargs)
 
@@ -115,7 +116,7 @@ class TLSImpersonationSession:
         kwargs["headers"].update(self.headers)
 
         if self._using_curl_cffi:
-            return self.session.post(url, impersonate=self.browser, **kwargs)
+            return self.session.post(url, impersonate=self.browser, **kwargs)  # type: ignore
         else:
             return self.session.post(url, **kwargs)
 
