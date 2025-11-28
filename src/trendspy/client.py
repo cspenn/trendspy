@@ -5,7 +5,7 @@ import random
 import requests
 from datetime import datetime, timezone
 from enum import Enum
-from typing import List
+from typing import List, Optional
 from urllib.parse import quote
 from time import sleep
 
@@ -831,7 +831,7 @@ class Trends:
         )
         return data
 
-    def categories(self, find: str = None, language: str = None) -> List[dict]:
+    def categories(self, find: Optional[str] = None, language: Optional[str] = None) -> List[dict]:
         """
         Search for categories in Google Trends data.
 
@@ -872,7 +872,7 @@ class Trends:
 
         return self._category_cache[cur_language].partial_search(find)
 
-    def geo(self, find: str = None, language: str = None) -> List[dict]:
+    def geo(self, find: Optional[str] = None, language: Optional[str] = None) -> List[dict]:
         """
         Search for geographical locations in Google Trends data.
 
